@@ -5,12 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Torrent Streamer - Player</title>
     <link rel="stylesheet" href="style.css">
+    <link href="./vjs.zencdn.net_7.8.4_video-js.css" rel="stylesheet" />
+    <script src="./vjs.zencdn.net_7.8.4_video.js"></script>
 </head>
 <body>
-    <video controls autoplay>
+    <!--<video controls autoplay>
         <source id="video-src" type="video/mp4">
         Your browser does not support the video tag.
+    </video>-->
+    <canvas id="progress-canvas" width="669" height="30"></canvas>
+    <video id="video-element" class="video-js" controls preload="metadata" width="669" height="264" data-setup='{}'>
+        <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that supports HTML5 video</p>
     </video>
+    
+    <div>
+        <button id="rewind" class="vjs-control vjs-button">Rewind</button>
+        <button id="fast-forward" class="vjs-control vjs-button">Fast Forward</button>
+        <button id="skip" class="vjs-control vjs-button">Skip</button>
+    </div>
     <script src="player.js"></script>
 </body>
 </html>

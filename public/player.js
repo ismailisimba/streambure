@@ -1,3 +1,17 @@
+const servUrl = window.location.hostname.includes("localhost")?"localhost:3000":"streambure-jzam6yvx3q-ez.a.run.app/";
+const socket = new WebSocket('ws://'+servUrl);
+const player = videojs('video-element');
+
+socket.onmessage = (event) => {
+    //console.log("wbEv",event.data)
+    const data = JSON.parse(event.data);
+    if (data.type === 'downloadProgress') {
+        handleDownloadProgress(data.progress, data.speed);
+    }
+};
+
+
+
 
 
 // Function to get a parameter value by name from the URL
@@ -30,16 +44,15 @@ async function startStreaming() {
     console.log("name",torrentName);
     const magnet = await getMagnetLink(torrentHash);
     if (magnet) {
-        const video = document.querySelectorAll("video")[0]
-        const source = document.createElement('source');
 
-        // Assuming a function getVideoUrl exists that returns the video URL from the torrent hash
-        source.src = "/stream/"+encodeURIComponent(magnet)+"/"+torrentName; 
-        source.type = 'video/mp4';
-
-        video.appendChild(source);
-        video.load();
-        video.play();
+        // Build the source URL
+        const sourceUrl = "/stream/" + encodeURIComponent(magnet) + "/" + torrentName;
+        
+        // Update the player's source
+        player.src({ src: sourceUrl, type: 'video/mp4' });
+        
+        // Play the video
+        player.play();
     } else {
         console.error('No torrent hash provided in the URL');
     }
@@ -64,3 +77,40 @@ async function getMagnetLink(url) {
       console.error('There has been a problem with your fetch operation:', error);
     }
   }
+
+
+  function handleDownloadProgress(progress, speed) {
+    const canvas = document.getElementById('progress-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the progress bar
+    ctx.fillStyle = '#76c7c0';
+    ctx.fillRect(0, 0, progress * canvas.width, canvas.height);
+
+    // Draw the text
+    ctx.fillStyle = '#333';
+    ctx.font = '16px Arial';
+    ctx.fillText(`Downloaded: ${progress * 100}% | Speed: ${speed} kB/s`, 10, 20);
+}
+
+
+document.getElementById('rewind').addEventListener('click', () => {
+    let newTime = player.currentTime() - 10;
+    if(newTime < 0) newTime = 0;
+    player.currentTime(newTime);
+});
+
+document.getElementById('fast-forward').addEventListener('click', () => {
+    let newTime = player.currentTime() + 10;
+    if(newTime > player.duration()) newTime = player.duration();
+    player.currentTime(newTime);
+});
+
+document.getElementById('skip').addEventListener('click', () => {
+    player.currentTime(player.currentTime() + 10);
+    console.log("hhjii",player.duration())
+    console.log("skipped")
+});
