@@ -41,13 +41,12 @@ function getUrlParameter(parameterName) {
 // Function to update the video source and start streaming
 async function startStreaming() {
     const torrentHash = getParameterByName('hash');
-    const torrentName = getUrlParameter("name")
-    console.log("name",torrentName);
+    const torrentName = getUrlParameter("name");
     const magnet = await getMagnetLink(torrentHash);
     if (magnet) {
 
         // Build the source URL
-        const sourceUrl = "/stream/" + encodeURIComponent(magnet) + "/" + torrentName;
+        const sourceUrl = "/stream/" + encodeURIComponent(magnet) + "/" + encodeURIComponent(torrentName);
         
         // Update the player's source
         player.src({ src: sourceUrl, type: 'video/mp4' });

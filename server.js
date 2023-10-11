@@ -15,7 +15,6 @@ const DOMPurify = createDOMPurify(window);
 const torrentSearch = require('./torrentSearch');
 //const WebTorrent = require('webtorrent');
 const tS = new torrentSearch();
-console.log("ts",tS)
 
 const app = express();
 const server = http.createServer(app);
@@ -178,7 +177,9 @@ async function fileExistsInBucket_f(fileName) {
             file.pipe(res);
         } else {
             const head = {
-                'Content-Length': fileSize,
+                'Content-Range': `bytes ${0}-${30000000}/${fileSize}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': 300000001,
                 'Content-Type': 'video/mkv',
                 'Transfer-Encoding':'chunked'
             };
