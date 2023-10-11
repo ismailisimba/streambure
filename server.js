@@ -172,6 +172,7 @@ async function fileExistsInBucket_f(fileName) {
                 'Accept-Ranges': 'bytes',
                 'Content-Length': chunksize,
                 'Content-Type': 'video/mkv',
+                'Transfer-Encoding':'chunked'
             };
             res.writeHead(206, head);
             file.pipe(res);
@@ -179,6 +180,7 @@ async function fileExistsInBucket_f(fileName) {
             const head = {
                 'Content-Length': fileSize,
                 'Content-Type': 'video/mkv',
+                'Transfer-Encoding':'chunked'
             };
             res.writeHead(200, head);
             fs.createReadStream(filePath).pipe(res);
