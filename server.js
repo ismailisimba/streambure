@@ -101,7 +101,7 @@ async function fileExistsInBucket_f(fileName) {
       });
   });*/
 
-  app.get('/stream/:infoHash/:fileName', async (req, res) => {
+  /*app.get('/stream/:infoHash/:fileName', async (req, res) => {
       const { infoHash, fileName: rawFileName } = req.params;
       const fileName = cleanString(rawFileName) + '.mkv';
       const localFilePath = `./tmp/${fileName}`;
@@ -146,7 +146,78 @@ async function fileExistsInBucket_f(fileName) {
           // Redirect to download endpoint if file doesn't exist in the bucket
           res.redirect(`/download/${encodeURIComponent(infoHash)}/${encodeURIComponent(rawFileName)}`);
       }
-  });
+  });*/
+
+  app.get('/stream/:infoHash/:fileName', async (req, res) => {
+    const { infoHash, fileName: rawFileName } = req.params;
+    const fileName = cleanString(rawFileName) + '.mkv';
+    const localFilePath = `./tmp/${fileName}`;
+    let fileExistsLocally = fs.existsSync(localFilePath);
+    let fileExistsInBucket = !fileExistsLocally ? await fileExistsInBucket_f(fileName) : false;
+    let totalChunks = 0;
+    let startTime = Date.now();
+
+    async function streamFile(filePath) {
+        const stat = fs.statSync(filePath);
+        const fileSize = stat.size;
+        const range = req.headers.range;
+        if (range) {
+            const parts = range.replace(/bytes=/, "").split("-");
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : fileSize-1;
+            const chunksize = (end-start)+1;
+            const file = fs.createReadStream(filePath, {start, end});
+            const head = {
+                'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': chunksize,
+                'Content-Type': 'video/mkv',
+            };
+            res.writeHead(206, head);
+            file.pipe(res);
+        } else {
+            const head = {
+                'Content-Length': fileSize,
+                'Content-Type': 'video/mkv',
+            };
+            res.writeHead(200, head);
+            fs.createReadStream(filePath).pipe(res);
+        }
+    }
+
+    if (fileExistsLocally || fileExistsInBucket) {
+        if (!fileExistsLocally) {
+            const file = bucket.file(fileName);
+            const writeStream = fs.createWriteStream(localFilePath);
+            const readStream = file.createReadStream();
+            const [metadata] = await bucket.file(fileName).getMetadata();
+            const size = metadata.size;
+            readStream
+                .on('data', chunk => {
+                    // ... your existing logic ...
+                    totalChunks += chunk.length;
+                    const progress = totalChunks / size;
+                    const currentTime = Date.now();
+                    const elapsedTime = (currentTime - startTime) / 1000;  // Time elapsed in seconds
+                    const speed = (totalChunks / elapsedTime) / 1024;
+                    wss.clients.forEach(client => {
+                        if (client.readyState === WebSocket.OPEN) {
+                            client.send(JSON.stringify({ type: 'downloadProgress', progress, speed }));
+                        }
+                    });
+                })
+                .pipe(writeStream)
+                .on('finish', () => {
+                    streamFile(localFilePath);
+                });
+        } else {
+            streamFile(localFilePath);
+        }
+    } else {
+        res.redirect(`/download/${encodeURIComponent(infoHash)}/${encodeURIComponent(rawFileName)}`);
+    }
+});
+
   
 
 app.get('/download/:infoHash/:fileName', async (req, res) => {
