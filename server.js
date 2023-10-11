@@ -36,7 +36,7 @@ app.post('/search', async (req, res) => {
     res.json(torrents);
 });
 
-async function fileExistsInBucket(fileName) {
+async function fileExistsInBucket_f(fileName) {
     const [exists] = await bucket.file(fileName).exists();
     return exists;
   }
@@ -106,7 +106,7 @@ async function fileExistsInBucket(fileName) {
       const fileName = cleanString(rawFileName) + '.mkv';
       const localFilePath = `./tmp/${fileName}`;
       let fileExistsLocally = fs.existsSync(localFilePath);
-      let fileExistsInBucket = !fileExistsLocally ? await fileExistsInBucket(fileName) : false;
+      let fileExistsInBucket = !fileExistsLocally ? await fileExistsInBucket_f(fileName) : false;
       let totalChunks = 0;
       let startTime = Date.now();
   
