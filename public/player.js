@@ -1,5 +1,6 @@
 const servUrl = window.location.hostname.includes("localhost")?"localhost:3000":"streambure-jzam6yvx3q-ez.a.run.app/";
-const socket = new WebSocket('ws://'+servUrl);
+const sockPrefx = window.location.href.includes("https")?"wss":"Ws";
+const socket = new WebSocket(sockPrefx+'://'+servUrl);
 const player = videojs('video-element');
 
 socket.onmessage = (event) => {
