@@ -287,6 +287,55 @@ app.get('/get-magnet', async (req, res) => {
 });
 
 
+app.get('/video/:infoHash/:fileName', async (req, res, next) => {
+    const { infoHash, fileName: rawFileName } = req.params;
+    const fileName = cleanString(rawFileName);  // assuming cleanString is a function to sanitize the fileName
+    const fileExists = await fileExistsInBucket(fileName);  // assuming fileExistsInBucket is a function to check if the file exists in the bucket
+
+    if (fileExists) {
+        const file = bucket.file(fileName);
+        const config = {
+            action: 'read',
+            expires: Date.now() + 1000 * 60 * 60 * 24  // 24 hours
+        };
+
+        file.getSignedUrl(config, (err, url) => {
+            if (err) {
+                next(err);
+                return;
+            }
+
+            const html = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Video Player</title>
+                    <link href="./vjs.zencdn.net_7.8.4_video-js.css" rel="stylesheet" />
+                </head>
+                <body>
+                    <video id="video-element" class="video-js" controls preload="auto" width="640" height="264" data-setup='{}'>
+                        <source src="${url}" type="video/mp4">
+                        <p class="vjs-no-js">
+                            To view this video please enable JavaScript, and consider upgrading to a web browser that supports HTML5 video
+                        </p>
+                    </video>
+                    <script src="./vjs.zencdn.net_7.8.4_video.js"></script>
+                </body>
+                </html>
+            `;
+
+            res.send(html);
+        });
+    } else {
+        // Redirect to the download endpoint if the file doesn't exist in the bucket
+        res.redirect(`/download/${encodeURIComponent(infoHash)}/${encodeURIComponent(rawFileName)}`);
+    }
+});
+
+
+
 
 /*app.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');

@@ -31,10 +31,18 @@ function displayTorrents(torrents) {
     });
 }
 
-document.getElementById('torrentBody').addEventListener('click', function(event) {
+/*document.getElementById('torrentBody').addEventListener('click', function(event) {
     if (event.target.tagName.toLowerCase() === 'button') {
         const torrentHash = event.target.getAttribute('data-hash');
         const name = event.target.getAttribute('data-name');
         window.location.href = `player.html?hash=${encodeURIComponent(torrentHash)}&name=${encodeURIComponent(name)}`;
+    }
+});*/
+
+document.getElementById('torrentBody').addEventListener('click', function(event) {
+    if (event.target.tagName.toLowerCase() === 'button') {
+        const torrentHash = event.target.getAttribute('data-hash');
+        const name = event.target.getAttribute('data-name');
+        window.location.href = `/video/${encodeURIComponent(torrentHash)}/${encodeURIComponent(name)}`;
     }
 });
