@@ -1,3 +1,14 @@
+const servUrl = window.location.hostname.includes("localhost")?"localhost:8080":"streambure-jzam6yvx3q-ez.a.run.app/";
+const sockPrefx = window.location.protocol.includes("https")?"wss":"Ws";
+const socket = new WebSocket(sockPrefx+'://'+servUrl);
+socket.onmessage = (event) => {
+    //console.log("wbEv",event.data)
+    const data = JSON.parse(event.data);
+    if (data.type === 'downloadProgress') {
+        handleDownloadProgress(data.progress, data.speed);
+    }
+};
+
 async function search() {
     const query = document.getElementById('query').value;
     const response = await fetch('/search', {
@@ -39,10 +50,44 @@ function displayTorrents(torrents) {
     }
 });*/
 
-document.getElementById('torrentBody').addEventListener('click', function(event) {
+document.getElementById('torrentBody').addEventListener('click', async function(event) {
     if (event.target.tagName.toLowerCase() === 'button') {
         const torrentHash = event.target.getAttribute('data-hash');
         const name = event.target.getAttribute('data-name');
-        window.location.href = `/video/${encodeURIComponent(torrentHash)}/${encodeURIComponent(name)}`;
+        window.location.href = `/video/${encodeURIComponent(await getMagnetLink(torrentHash))}/${encodeURIComponent(name)}`;
     }
 });
+
+
+async function getMagnetLink(url) {
+    try {
+      // Fetch the HTML from the URL
+      const response = await fetch("/get-magnet?url="+url);
+      if (!response.ok) {
+        throw new Error('Network response was not ok ' + response.statusText);
+      }
+      const text = await response.json()
+      //console.log("text",text.magnetLink)
+      return text.magnetLink;
+    } catch (error) {
+      console.error('There has been a problem with your fetch operation:', error);
+    }
+  }
+
+
+  function handleDownloadProgress(progress, speed) {
+    const canvas = document.getElementById('progress-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the progress bar
+    ctx.fillStyle = '#76c7c0';
+    ctx.fillRect(0, 0, progress * canvas.width, canvas.height);
+
+    // Draw the text
+    ctx.fillStyle = '#333';
+    ctx.font = '16px Arial';
+    ctx.fillText(`Downloaded: ${progress * 100}% | Speed: ${speed} kB/s`, 10, 20);
+}

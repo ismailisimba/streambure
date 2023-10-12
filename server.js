@@ -217,7 +217,7 @@ app.get('/download/:infoHash/:fileName', async (req, res) => {
             throw new Error('File not found');
         }
 
-        const torrentFileName = `${cleanString(rawFileName)}.mkv`;
+        const torrentFileName = `${cleanString(rawFileName)}`;
         const chunks = [];
         const stream = file.createReadStream();
         const fileSize = file.length;
@@ -244,11 +244,90 @@ app.get('/download/:infoHash/:fileName', async (req, res) => {
             const gcsFile = bucket.file(torrentFileName);
             gcsFile.save(buffer, err => {
                 if (err) throw err;
-                res.redirect(`/stream/${encodeURIComponent(infoHash)}/${encodeURIComponent(rawFileName)}`);
+                res.json({ success: true });
             });
         });
     });
 });
+
+
+
+app.get('/prepare/:infoHash/:fileName', async(req, res) => {
+    const { infoHash, fileName: rawFileName } = req.params;
+    const fileName = cleanString(rawFileName) + '.mkv';
+    const fileExistsInBucket = await fileExistsInBucket_f(fileName);
+    console.log(fileName);
+    if(!fileExistsInBucket){
+
+        const html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+        <link href="./../style.css" rel="stylesheet" />
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Downloading...</title>
+        </head>
+        <body>
+            <canvas id="progress-canvas" height="24"></canvas>
+            <script>
+                const servUrl = window.location.hostname.includes("localhost") ? "localhost:8080" : "streambure-jzam6yvx3q-ez.a.run.app/";
+                const sockPrefx = window.location.protocol.includes("https") ? "wss" : "ws";
+                const socket = new WebSocket(sockPrefx + '://' + servUrl);
+                const { infoHash, fileName } = ${JSON.stringify(req.params)};
+
+                socket.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'downloadProgress') {
+                        handleDownloadProgress(data.progress, data.speed);
+                    }
+                };
+
+                function handleDownloadProgress(progress, speed) {
+                    const canvas = document.getElementById('progress-canvas');
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#76c7c0';
+                    ctx.fillRect(0, 0, progress * canvas.width, canvas.height);
+                    ctx.fillStyle = '#333';
+                    ctx.font = '16px Arial';
+                    progress = progress*100;
+                    ctx.fillText('Downloaded:'+progress+'% | Speed: '+speed+' kB/s', 10, 20);
+                }
+
+                // Trigger the download when the page loads
+                fetch('/download/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileName)}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Redirect to the video endpoint once the download is complete
+                            window.location.href = '/video/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileName)}';
+                        } else {
+                            console.error('Download failed');
+                        }
+                    });
+            </script>
+            <script src="./../script.js"></script>
+        </body>
+        </html>
+    `;
+    
+    res.send(html);
+
+    }else{
+
+        res.redirect(`/video/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileName)}`);
+
+    }
+
+});
+
+
+
+
+
+
+
 
 
 
@@ -290,8 +369,8 @@ app.get('/get-magnet', async (req, res) => {
 app.get('/video/:infoHash/:fileName', async (req, res, next) => {
     const { infoHash, fileName: rawFileName } = req.params;
     const fileName = cleanString(rawFileName);  // assuming cleanString is a function to sanitize the fileName
-    const fileExists = await fileExistsInBucket(fileName);  // assuming fileExistsInBucket is a function to check if the file exists in the bucket
-
+    const fileExists = await fileExistsInBucket_f(fileName);  // assuming fileExistsInBucket is a function to check if the file exists in the bucket
+    console.log("filename",fileName)
     if (fileExists) {
         const file = bucket.file(fileName);
         const config = {
@@ -312,7 +391,8 @@ app.get('/video/:infoHash/:fileName', async (req, res, next) => {
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>Video Player</title>
-                    <link href="./vjs.zencdn.net_7.8.4_video-js.css" rel="stylesheet" />
+                    <link href="../style.css" rel="stylesheet" />
+                    <link href="../vjs.zencdn.net_7.8.4_video-js.css" rel="stylesheet" />
                 </head>
                 <body>
                     <video id="video-element" class="video-js" controls preload="auto" width="640" height="264" data-setup='{}'>
@@ -321,7 +401,7 @@ app.get('/video/:infoHash/:fileName', async (req, res, next) => {
                             To view this video please enable JavaScript, and consider upgrading to a web browser that supports HTML5 video
                         </p>
                     </video>
-                    <script src="./vjs.zencdn.net_7.8.4_video.js"></script>
+                    <script src="../vjs.zencdn.net_7.8.4_video.js"></script>
                 </body>
                 </html>
             `;
@@ -329,8 +409,9 @@ app.get('/video/:infoHash/:fileName', async (req, res, next) => {
             res.send(html);
         });
     } else {
+        console.log("Iran?")
         // Redirect to the download endpoint if the file doesn't exist in the bucket
-        res.redirect(`/download/${encodeURIComponent(infoHash)}/${encodeURIComponent(rawFileName)}`);
+        res.redirect(`/prepare/${encodeURIComponent(infoHash)}/${encodeURIComponent(rawFileName)}`);
     }
 });
 
