@@ -46,3 +46,29 @@ th, td {
 th {
     background-color: #f2f2f2;
 }
+
+.simple-container{
+    display: block;
+    position: relative;
+    width: 96vw;
+}
+
+.simple-container .video-js{
+    width: 96% !important;
+}
+
+
+.simple-container .video-js{
+    width: 84% !important;
+    aspect-ratio: 16 / 9;
+    height: auto !important;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.video-js .vjs-big-play-button {
+    top: 45% !important;
+    left: 44% !important;
+}

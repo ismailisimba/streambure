@@ -3,6 +3,14 @@ const sockPrefx = window.location.protocol.includes("https")?"wss":"Ws";
 const socket = new WebSocket(sockPrefx+'://'+servUrl);
 const player = videojs('video-element');
 
+
+
+const canvas = document.getElementById('progress-canvas');
+const canvasW = window.getComputedStyle(document.querySelectorAll(".video-js")[0]).getPropertyValue("width");
+canvas.setAttribute("width",canvasW)
+
+
+
 socket.onmessage = (event) => {
     //console.log("wbEv",event.data)
     const data = JSON.parse(event.data);
