@@ -9,6 +9,7 @@ const serveStatic = require('serve-static');
 const { Storage } = require('@google-cloud/storage');
 const { Readable } = require('stream');
 const createDOMPurify = require('dompurify');
+const PORT = process.env.PORT || 8080;
 const { JSDOM } = require('jsdom');
 const { window } = new JSDOM('');
 const DOMPurify = createDOMPurify(window);
@@ -300,8 +301,8 @@ wss.on('connection', ws => {
 });
 
 
-server.listen(3000, () => {
-    console.log('Server is running on port 3000');
+server.listen(PORT, () => {
+    console.log('Server is running on port '+PORT);
 });
 
 function cleanString(str) {
