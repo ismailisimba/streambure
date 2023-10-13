@@ -31,7 +31,6 @@ class One337x {
                 `${this.url}/search/${what}/${page}/`;
 
             try {
-                console.log("here?")
                 const response = await axios.get(pageUrl);
                 const html = response.data;
                 const parser = new parse.Parser({
@@ -41,7 +40,6 @@ class One337x {
                             currentTorrent = {};
                             dataIndex = 0;
                         } else if (capturingData && name === "a" && attribs.href && attribs.href.startsWith('/torrent/')) {
-                            console.log("attrib",attribs)
                             const [_, torrentId, torrentHash] = attribs.href.split('/');
                             currentTorrent.link = `https://1337x.to${attribs.href}`;
                             currentTorrent.torrentHash = `https://1337x.to${attribs.href}`;
@@ -71,6 +69,18 @@ class One337x {
                                     case 6:
                                         currentTorrent.extra = text||null;
                                         break;
+                                    case 7:
+                                        currentTorrent.extra2 = text||null;
+                                        break;
+                                    case 8:
+                                        currentTorrent.extra3 = text||null;
+                                         break;
+                                    case 9:
+                                        currentTorrent.extra4 = text||null;
+                                        break;
+                                    case 10:
+                                        currentTorrent.extra5 = text||null;
+                                        break;
                                 }
                             }
                         }
@@ -82,10 +92,8 @@ class One337x {
                         }
                     }
                 }, { decodeEntities: true });
-                console.log("heretoo??")
                 parser.write(html);
                 parser.end();
-                console.log("dddy",torrents)
                 
                 if (html.includes('<li class="last">')){
                     return torrents;

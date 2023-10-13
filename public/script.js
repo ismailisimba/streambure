@@ -25,18 +25,33 @@ async function search() {
     // ...
 }
 
+async function showDownFiles() {
+    const query = document.getElementById('query').value;
+    const response = await fetch('/list-files', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    const torrents = await response.json();
+    displayTorrents(torrents);
+    // Handle displaying search results to the user
+    // ...
+}
+
 
 function displayTorrents(torrents) {
     const tbody = document.getElementById('torrentBody');
+    tbody.querySelectorAll("tr").forEach(tr=>tr.remove());
     torrents.forEach(torrent => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${torrent.name}</td>
-            <td>${torrent.seeds}</td>
-            <td>${torrent.leeches}</td>
-            <td>${torrent.extra}</td>
-            <td>${torrent.size}</td>
-            <td><button data-hash="${torrent.torrentHash}" data-name="${torrent.name}">Play</button></td>
+            <td>${torrent.seeds || null}</td>
+            <td>${torrent.leeches || null}</td>
+            <td>${torrent.extra || null}</td>
+            <td>${torrent.size || null}</td>
+            <td>${torrent.action}</td>
         `;
         tbody.appendChild(row);
     });
@@ -51,7 +66,7 @@ function displayTorrents(torrents) {
 });*/
 
 document.getElementById('torrentBody').addEventListener('click', async function(event) {
-    if (event.target.tagName.toLowerCase() === 'button') {
+    if (event.target.tagName.toLowerCase() === 'button'&&event.target.innerText==="Search") {
         const torrentHash = event.target.getAttribute('data-hash');
         const name = event.target.getAttribute('data-name');
         window.location.href = `/video/${encodeURIComponent(await getMagnetLink(torrentHash))}/${encodeURIComponent(name)}`;

@@ -9,7 +9,7 @@ const serveStatic = require('serve-static');
 const { Storage } = require('@google-cloud/storage');
 const { Readable } = require('stream');
 const createDOMPurify = require('dompurify');
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8081;
 const { JSDOM } = require('jsdom');
 const { window } = new JSDOM('');
 const DOMPurify = createDOMPurify(window);
@@ -325,7 +325,35 @@ app.get('/prepare/:infoHash/:fileName', async(req, res) => {
 
 
 
+app.get('/list-files', async (req, res) => {
+    try {
+        // Get list of files in the bucket
+        const [files] = await bucket.getFiles();
 
+        // Generate signed URLs for each file
+        /*const signedUrlsPromises = files.map(file =>
+            file.getSignedUrl({
+                version: 'v4',
+                action: 'read',
+                expires: Date.now() + 24 * 60 * 60 * 1000,  // 24 hours
+            })
+        );*/
+
+        //const signedUrls = await Promise.all(signedUrlsPromises);
+        
+        // Create a response object
+        const responseObject = files.map((file, index) => ({
+            name: file.name,
+            //signedUrl: signedUrls[index][0],  // getSignedUrl returns an array
+            action: `<button onclick="window.location.href='/video/nohash/${encodeURIComponent(file.name)}'">Play</button>`
+        }));
+
+        res.json(responseObject);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 
 
